@@ -7,3 +7,5 @@
 # Chainlytics
 
 Real-time crypto news → analytics → time-series dashboard.
+
+- PostgreSQL stores raw articles and processed metrics.
