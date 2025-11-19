@@ -4,24 +4,36 @@ services:
   redis:
     image: redis:7
     ports:
-      - "6379:6379"                 # open Redis on your laptop at port 6379
-    command: ["redis-server", "--appendonly", "yes"]  # keep data after restarts
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
     volumes:
-      - redis_data:/data            # store Redis data outside the container
+      - redis_data:/data
 
-  postgres:
+  postgres_raw:
     image: postgres:16
     environment:
-      POSTGRES_USER: chainlytics    # db username
-      POSTGRES_PASSWORD: chainlytics# db password
-      POSTGRES_DB: chainlytics      # default db name
+      POSTGRES_USER: chainlytics
+      POSTGRES_PASSWORD: chainlytics
+      POSTGRES_DB: raw_db
     ports:
-      - "5432:5432"                 # open Postgres on your laptop at port 5432
+      - "5433:5432"
     volumes:
-      - pg_data:/var/lib/postgresql/data  # store Postgres data persistently
-      - ./infra/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+      - pg_raw_data:/var/lib/postgresql/data
+      - ./infra/init_db_raw.sql:/docker-entrypoint-initdb.d/init_db_raw.sql
 
+  postgres_analytics:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: chainlytics
+      POSTGRES_PASSWORD: chainlytics
+      POSTGRES_DB: analytics_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - pg_analytics_data:/var/lib/postgresql/data
+      - ./infra/init_db_analytics.sql:/docker-entrypoint-initdb.d/init_db_analytics.sql
 
 volumes:
   redis_data:
-  pg_data:
+  pg_raw_data:
+  pg_analytics_data:

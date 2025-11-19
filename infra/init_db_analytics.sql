@@ -1,12 +1,3 @@
---creating a table for new articles
-
-CREATE TABLE IF NOT EXISTS articles (
-    id SERIAL PRIMARY KEY,
-    title TEXT NOT NULL,
-    source TEXT,
-    published_at TIMESTAMP DEFAULT NOW()
-);
-
 -- creating a table for metrics (counts per coin per timestamp)
 CREATE TABLE IF NOT EXISTS metrics (
     id SERIAL PRIMARY KEY,
