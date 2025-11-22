@@ -77,10 +77,10 @@ while True:
                 for coin, mentions in coin_counts.items():
                     analytics_cur.execute(
                         """
-                        INSERT INTO metrics (coin, mentions, recorded_at)
-                        VALUES (%s, %s, NOW())
+                        INSERT INTO metrics (coin,article_id, mentions, recorded_at)
+                        VALUES (%s, %s, %s, NOW())
                         """,
-                        (coin, mentions)
+                        (coin, article_id, mentions)
                     )
                     print(f"Inserted metric: coin={coin}, mentions={mentions}")
 
