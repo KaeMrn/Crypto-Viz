@@ -65,12 +65,14 @@ while True:
             print(f"  Published At: {published_at}")
 
             # (NEW) Coin detection
-            upper_title = title.upper()
+            tokens = title.upper().split()
             coin_counts = {}
 
             for coin in COINS:
-                if coin in upper_title:
-                    coin_counts[coin] = upper_title.count(coin)
+                count = tokens.count(coin)
+                if count > 0:
+                    coin_counts[coin] = count
+
 
             if coin_counts:
                 print(f"Detected coins: {coin_counts}")
