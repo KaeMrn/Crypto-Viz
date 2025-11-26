@@ -1,30 +1,59 @@
 import { useState, useEffect } from 'react';
+import { getLatestMetrics, getTrending } from '../server/metrics';
 
 export default function Dashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [metrics, setMetrics] = useState({});
+  const [trendingCoins, setTrendingCoins] = useState([]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    const loadTimer = setTimeout(() => setIsLoading(false), 2000);
+    
+    // Fetch real data from API
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        // Fetch latest metrics and trending data
+        const [latestMetrics, trending] = await Promise.all([
+          getLatestMetrics(),
+          getTrending()
+        ]);
+        
+        setMetrics(latestMetrics);
+        setTrendingCoins(trending.slice(0, 4)); // Top 4 trending coins
+        
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError('Failed to load data from API');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+    
+    // Refresh data every 30 seconds
+    const dataTimer = setInterval(fetchData, 30000);
+    
     return () => {
       clearInterval(timer);
-      clearTimeout(loadTimer);
+      clearInterval(dataTimer);
     };
   }, []);
 
+  // Calculate stats from real data
+  const totalMentions = Object.values(metrics).reduce((sum, count) => sum + count, 0);
+  const activeCoins = Object.keys(metrics).length;
+  
   const stats = [
-    { title: 'Total Volume', value: '$2.4M', change: '+12.5%', positive: true },
-    { title: 'Active Mentions', value: '1,247', change: '+8.2%', positive: true },
-    { title: 'Sentiment Score', value: '78.3', change: '-2.1%', positive: false },
-    { title: 'Market Cap', value: '$1.2B', change: '+15.7%', positive: true },
-  ];
-
-  const trendingCoins = [
-    { name: 'Bitcoin', symbol: 'BTC', price: '$43,250', change: '+2.4%', positive: true },
-    { name: 'Ethereum', symbol: 'ETH', price: '$2,680', change: '+1.8%', positive: true },
-    { name: 'Solana', symbol: 'SOL', price: '$98.45', change: '-0.9%', positive: false },
-    { name: 'Cardano', symbol: 'ADA', price: '$0.52', change: '+4.2%', positive: true },
+    { title: 'Total Mentions', value: totalMentions.toLocaleString(), change: 'Live', positive: true },
+    { title: 'Active Coins', value: activeCoins.toString(), change: 'Tracked', positive: true },
+    { title: 'Data Sources', value: 'Reddit', change: 'Connected', positive: true },
+    { title: 'Last Update', value: 'Live', change: 'Real-time', positive: true },
   ];
 
   return (
@@ -94,7 +123,12 @@ export default function Dashboard() {
               {isLoading ? (
                 <div className="flex items-center space-x-3">
                   <div className="w-6 h-6 border-3 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-gray-600 dark:text-gray-300">Loading sentiment data...</span>
+                  <span className="text-gray-600 dark:text-gray-300">Loading real-time data...</span>
+                </div>
+              ) : error ? (
+                <div className="text-center text-red-600 dark:text-red-400">
+                  <p>Unable to load chart data</p>
+                  <p className="text-sm mt-2">{error}</p>
                 </div>
               ) : (
                 <div className="text-center">
@@ -103,7 +137,8 @@ export default function Dashboard() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
                   </div>
-                  <p className="text-gray-600 dark:text-gray-300">Interactive chart will render here</p>
+                  <p className="text-gray-600 dark:text-gray-300">Real-time sentiment analysis chart</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Powered by live Reddit data</p>
                 </div>
               )}
             </div>
@@ -111,25 +146,40 @@ export default function Dashboard() {
 
           {/* Trending Coins */}
           <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-xl">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Top Performers</h3>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Most Mentioned Coins</h3>
             <div className="space-y-4">
-              {trendingCoins.map((coin, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-white/40 dark:bg-gray-700/40 rounded-xl hover:bg-white/60 dark:hover:bg-gray-700/60 transition-all duration-200 cursor-pointer">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-gradient-to-r from-orange-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
-                      {coin.symbol.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">{coin.name}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{coin.symbol}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-900 dark:text-white">{coin.price}</p>
-                    <p className={`text-sm ${coin.positive ? 'text-green-600' : 'text-red-600'}`}>{coin.change}</p>
-                  </div>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="w-6 h-6 border-3 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="ml-3 text-gray-600 dark:text-gray-300">Loading trending coins...</span>
                 </div>
-              ))}
+              ) : error ? (
+                <div className="text-center py-8 text-red-600 dark:text-red-400">
+                  {error}
+                </div>
+              ) : trendingCoins.length > 0 ? (
+                trendingCoins.map((coinData, index) => (
+                  <div key={coinData.coin} className="flex items-center justify-between p-4 bg-white/40 dark:bg-gray-700/40 rounded-xl hover:bg-white/60 dark:hover:bg-gray-700/60 transition-all duration-200 cursor-pointer">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-gradient-to-r from-orange-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                        {coinData.coin.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white">{coinData.coin}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">#{index + 1} Trending</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-gray-900 dark:text-white">{coinData.mentions}</p>
+                      <p className="text-sm text-blue-600">mentions</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-600 dark:text-gray-300">
+                  No trending data available
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -139,22 +189,37 @@ export default function Dashboard() {
           
           {/* Activity Feed */}
           <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-xl">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Recent Activity</h3>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Live Mentions</h3>
             <div className="space-y-4">
-              {[
-                { action: 'New mention detected', asset: 'BTC', time: '2 minutes ago', type: 'positive' },
-                { action: 'Price alert triggered', asset: 'ETH', time: '5 minutes ago', type: 'neutral' },
-                { action: 'Sentiment spike', asset: 'SOL', time: '12 minutes ago', type: 'positive' },
-                { action: 'Volume increase', asset: 'ADA', time: '18 minutes ago', type: 'positive' },
-              ].map((activity, index) => (
-                <div key={index} className="flex items-center p-4 bg-white/40 dark:bg-gray-700/40 rounded-xl">
-                  <div className={`w-3 h-3 rounded-full mr-4 ${activity.type === 'positive' ? 'bg-green-400' : activity.type === 'negative' ? 'bg-red-400' : 'bg-blue-400'}`}></div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{activity.action}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{activity.asset} • {activity.time}</p>
-                  </div>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="w-6 h-6 border-3 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="ml-3 text-gray-600 dark:text-gray-300">Loading activity...</span>
                 </div>
-              ))}
+              ) : error ? (
+                <div className="text-center py-8 text-red-600 dark:text-red-400">
+                  {error}
+                </div>
+              ) : Object.entries(metrics).length > 0 ? (
+                Object.entries(metrics)
+                  .sort(([,a], [,b]) => b - a)
+                  .slice(0, 4)
+                  .map(([coin, mentions], index) => (
+                    <div key={coin} className="flex items-center p-4 bg-white/40 dark:bg-gray-700/40 rounded-xl">
+                      <div className="w-3 h-3 rounded-full mr-4 bg-green-400"></div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {mentions} mentions detected
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{coin} • Live data</p>
+                      </div>
+                    </div>
+                  ))
+              ) : (
+                <div className="text-center py-8 text-gray-600 dark:text-gray-300">
+                  No activity data available
+                </div>
+              )}
             </div>
           </div>
 
@@ -165,7 +230,12 @@ export default function Dashboard() {
               {isLoading ? (
                 <div className="flex items-center space-x-3">
                   <div className="w-6 h-6 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-gray-600 dark:text-gray-300">Processing analytics...</span>
+                  <span className="text-gray-600 dark:text-gray-300">Loading analytics...</span>
+                </div>
+              ) : error ? (
+                <div className="text-center text-red-600 dark:text-red-400">
+                  <p>Unable to load analytics</p>
+                  <p className="text-sm mt-2">{error}</p>
                 </div>
               ) : (
                 <div className="text-center">
@@ -174,7 +244,8 @@ export default function Dashboard() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
                     </svg>
                   </div>
-                  <p className="text-gray-600 dark:text-gray-300">Time-series visualization</p>
+                  <p className="text-gray-600 dark:text-gray-300">Live mention analytics</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Real-time data from Reddit API</p>
                 </div>
               )}
             </div>
