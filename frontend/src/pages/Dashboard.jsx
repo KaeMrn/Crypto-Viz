@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { getLatestMetrics, getTrending, getCoinHistory } from '../server/metrics';
 import Header from '../components/Header';
 import TemporalControlPanel from '../components/TemporalControlPanel';
@@ -52,9 +52,16 @@ export default function Dashboard() {
   const [volatilityData, setVolatilityData] = useState({});
   const [comparisonMode, setComparisonMode] = useState(false);
   const [selectedCoinsForComparison, setSelectedCoinsForComparison] = useState([]);
+  
+  // Chart data cache for different timeframes
+  const [chartDataCache, setChartDataCache] = useState({
+    '1D': null,
+    '7D': null,
+    '30D': null
+  });
 
-  // Generate comprehensive chart data with temporal analytics
-  const generateChartData = async (metricsData, trendingData) => {
+  // Memoized chart data generator for better performance
+  const generateChartDataForTimeframe = useCallback((metricsData, trendingData, timeframe) => {
     const colors = [
       'rgba(59, 130, 246, 0.8)',   // Blue
       'rgba(16, 185, 129, 0.8)',   // Green
@@ -133,15 +140,15 @@ export default function Dashboard() {
       });
     } else {
       // Fallback to simulated data
-      const hoursBack = selectedTimeframe === '1D' ? 24 : 
-                       selectedTimeframe === '7D' ? 168 : 720;
+      const hoursBack = timeframe === '1D' ? 24 : 
+                       timeframe === '7D' ? 168 : 720;
       
       for (let i = hoursBack; i >= 0; i -= Math.max(1, Math.floor(hoursBack / 15))) {
         const time = new Date(now.getTime() - (i * 60 * 60 * 1000));
         timeLabels.push(time.toLocaleTimeString([], { 
           hour: '2-digit', 
           minute: '2-digit',
-          ...(selectedTimeframe !== '1D' && { 
+          ...(timeframe !== '1D' && { 
             month: 'short', 
             day: 'numeric' 
           })
@@ -206,13 +213,33 @@ export default function Dashboard() {
       ],
     };
 
-    setChartData({
+    return {
       sentimentChart,
       distributionChart,
       volumeChart,
       trendChart,
-    });
-  };
+    };
+  }, [historicalData]);
+
+  // Generate comprehensive chart data with caching
+  const generateChartData = useCallback(async (metricsData, trendingData) => {
+    // Check if we have cached data for all timeframes
+    const timeframes = ['1D', '7D', '30D'];
+    const newCache = { ...chartDataCache };
+    
+    // Generate data for each timeframe and cache it
+    for (const timeframe of timeframes) {
+      if (!newCache[timeframe]) {
+        newCache[timeframe] = generateChartDataForTimeframe(metricsData, trendingData, timeframe);
+      }
+    }
+    
+    // Update cache
+    setChartDataCache(newCache);
+    
+    // Set current chart data based on selected timeframe
+    setChartData(newCache[selectedTimeframe] || newCache['1D']);
+  }, [selectedTimeframe, chartDataCache, generateChartDataForTimeframe]);
 
   // Fetch historical data for temporal analysis
   const fetchHistoricalData = async (topCoins) => {
@@ -304,6 +331,9 @@ export default function Dashboard() {
       
       // Generate analytics insights
       generateAnalyticsInsights(latestMetrics, trending);
+      
+      // Clear cache when new data arrives to ensure fresh data
+      setChartDataCache({ '1D': null, '7D': null, '30D': null });
       
       // Generate chart data
       await generateChartData(latestMetrics, trending);
@@ -400,12 +430,33 @@ export default function Dashboard() {
     };
   }, [refreshInterval, isRealTimeActive]);
 
-  // Regenerate chart data when timeframe changes
+  // Debounced timeframe change handler
+  const handleTimeframeChange = useCallback((newTimeframe) => {
+    setSelectedTimeframe(newTimeframe);
+  }, []);
+
+  // Optimized chart data switching using cache
   useEffect(() => {
-    if (Object.keys(metrics).length > 0 && trendingCoins.length > 0) {
-      generateChartData(metrics, trendingCoins);
+    if (chartDataCache[selectedTimeframe]) {
+      // Use cached data immediately
+      setChartData(chartDataCache[selectedTimeframe]);
+    } else if (Object.keys(metrics).length > 0 && trendingCoins.length > 0) {
+      // Generate data if not cached
+      const data = generateChartDataForTimeframe(metrics, trendingCoins, selectedTimeframe);
+      setChartData(data);
+      
+      // Update cache
+      setChartDataCache(prev => ({
+        ...prev,
+        [selectedTimeframe]: data
+      }));
     }
-  }, [selectedTimeframe]);
+  }, [selectedTimeframe, chartDataCache, metrics, trendingCoins, generateChartDataForTimeframe]);
+
+  // Memoized current chart data for performance
+  const currentChartData = useMemo(() => {
+    return chartDataCache[selectedTimeframe] || chartData;
+  }, [chartDataCache, selectedTimeframe, chartData]);
 
   // Calculate advanced stats with temporal analytics
   const totalMentions = Object.values(metrics).reduce((sum, count) => sum + count, 0);
@@ -478,9 +529,9 @@ export default function Dashboard() {
           <MarketSentimentChart 
             isLoading={isLoading}
             error={error}
-            chartData={chartData.sentimentChart}
+            chartData={currentChartData.sentimentChart}
             selectedTimeframe={selectedTimeframe}
-            onTimeframeChange={setSelectedTimeframe}
+            onTimeframeChange={handleTimeframeChange}
           />
 
           {/* Trending Coins */}
