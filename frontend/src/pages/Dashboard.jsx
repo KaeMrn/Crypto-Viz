@@ -211,6 +211,75 @@ export default function Dashboard() {
     });
   };
 
+  // Fetch historical data for temporal analysis
+  const fetchHistoricalData = async (topCoins) => {
+    const historicalPromises = topCoins.map(async (coinData) => {
+      try {
+        const history = await getCoinHistory(coinData.coin);
+        return { coin: coinData.coin, history: history.history || [] };
+      } catch (err) {
+        console.warn(`Failed to fetch history for ${coinData.coin}:`, err);
+        return { coin: coinData.coin, history: [] };
+      }
+    });
+    
+    const historicalResults = await Promise.all(historicalPromises);
+    const historicalMap = {};
+    historicalResults.forEach(({ coin, history }) => {
+      historicalMap[coin] = history;
+    });
+    
+    setHistoricalData(historicalMap);
+  };
+
+  // Generate business intelligence insights
+  const generateAnalyticsInsights = (metricsData, trendingData) => {
+    const insights = [];
+    const totalMentions = Object.values(metricsData).reduce((sum, count) => sum + count, 0);
+    
+    // Volatility analysis
+    const mentionCounts = Object.values(metricsData);
+    const average = mentionCounts.reduce((sum, count) => sum + count, 0) / mentionCounts.length;
+    const variance = mentionCounts.reduce((sum, count) => sum + Math.pow(count - average, 2), 0) / mentionCounts.length;
+    const volatility = Math.sqrt(variance);
+    
+    // Market dominance
+    const topCoin = trendingData[0];
+    const marketDominance = topCoin ? (topCoin.mentions / totalMentions * 100).toFixed(1) : 0;
+    
+    // Growth trends
+    const growthCoins = trendingData.filter(coin => coin.mentions > average);
+    
+    insights.push({
+      type: 'market_dominance',
+      title: `${topCoin?.coin || 'N/A'} Market Dominance`,
+      value: `${marketDominance}%`,
+      description: `${topCoin?.coin || 'Top coin'} accounts for ${marketDominance}% of total mentions`,
+      trend: marketDominance > 30 ? 'high' : marketDominance > 15 ? 'medium' : 'low',
+      priority: marketDominance > 40 ? 'critical' : 'normal'
+    });
+    
+    insights.push({
+      type: 'volatility',
+      title: 'Market Volatility',
+      value: volatility.toFixed(1),
+      description: `Current mention volatility: ${volatility > 50 ? 'High' : volatility > 20 ? 'Medium' : 'Low'}`,
+      trend: volatility > 50 ? 'high' : volatility > 20 ? 'medium' : 'low',
+      priority: volatility > 100 ? 'critical' : 'normal'
+    });
+    
+    insights.push({
+      type: 'growth_momentum',
+      title: 'Growth Momentum',
+      value: `${growthCoins.length}/${trendingData.length}`,
+      description: `${growthCoins.length} coins showing above-average mentions`,
+      trend: growthCoins.length / trendingData.length > 0.5 ? 'high' : 'medium',
+      priority: 'normal'
+    });
+    
+    setAnalyticsInsights(insights);
+  };
+
   // Fetch real data from API with temporal analytics
   const fetchData = async () => {
     try {
