@@ -13,4 +13,4 @@ This separation follows a common data engineering practice:
 -Raw data is stored first (so it can always be reprocessed).
 -Processed metrics are stored separately, optimized for visualization and temporal analysis.
 
-This schemais automatically created when starting the project via Docker Compose (`infra/init_db.sql`).
+This schemais automatically created when starting the project via Docker Compose (`infra/init_db.sql`)
