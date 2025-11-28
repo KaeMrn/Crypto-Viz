@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getLatestMetrics, getTrending, getCoinHistory } from '../server/metrics';
 import Header from '../components/Header';
 import TemporalControlPanel from '../components/TemporalControlPanel';
+import AnalyticsInsights from '../components/AnalyticsInsights';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -465,32 +466,7 @@ export default function Dashboard() {
           onRefresh={fetchData}
         />
 
-        {/* ANALYTICS INSIGHTS */}
-        {analyticsInsights.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Business Intelligence Insights</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {analyticsInsights.map((insight, index) => (
-                <div key={index} className={`bg-white/60 dark:bg-gray-800/60 backdrop-blur-lg rounded-xl p-4 border ${
-                  insight.priority === 'critical' ? 'border-red-300 dark:border-red-600' : 'border-white/20'
-                } shadow-lg`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium text-gray-900 dark:text-white">{insight.title}</h3>
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      insight.trend === 'high' ? 'bg-red-100 text-red-800' :
-                      insight.trend === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-green-100 text-green-800'
-                    }`}>
-                      {insight.trend.toUpperCase()}
-                    </span>
-                  </div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{insight.value}</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">{insight.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <AnalyticsInsights insights={analyticsInsights} />
 
         {/* ENHANCED STATS GRID */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
