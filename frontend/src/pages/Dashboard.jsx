@@ -5,6 +5,11 @@ import TemporalControlPanel from '../components/TemporalControlPanel';
 import AnalyticsInsights from '../components/AnalyticsInsights';
 import StatsGrid from '../components/StatsGrid';
 import MarketSentimentChart from '../components/MarketSentimentChart';
+import TrendingCoins from '../components/TrendingCoins';
+import VolumeAnalysisChart from '../components/VolumeAnalysisChart';
+import TrendRankingChart from '../components/TrendRankingChart';
+import LiveActivityStream from '../components/LiveActivityStream';
+import MentionDistribution from '../components/MentionDistribution';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -534,266 +539,42 @@ export default function Dashboard() {
             onTimeframeChange={handleTimeframeChange}
           />
 
-          {/* Trending Coins */}
-          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-xl">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Most Mentioned Coins</h3>
-            <div className="space-y-4">
-              {isLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="w-6 h-6 border-3 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="ml-3 text-gray-600 dark:text-gray-300">Loading trending coins...</span>
-                </div>
-              ) : error ? (
-                <div className="text-center py-8 text-red-600 dark:text-red-400">
-                  {error}
-                </div>
-              ) : trendingCoins.length > 0 ? (
-                trendingCoins.map((coinData, index) => (
-                  <div key={coinData.coin} className="flex items-center justify-between p-4 bg-white/40 dark:bg-gray-700/40 rounded-xl hover:bg-white/60 dark:hover:bg-gray-700/60 transition-all duration-200 cursor-pointer">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-gradient-to-r from-orange-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
-                        {coinData.coin.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900 dark:text-white">{coinData.coin}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">#{index + 1} Trending</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-gray-900 dark:text-white">{coinData.mentions}</p>
-                      <p className="text-sm text-blue-600">mentions</p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-8 text-gray-600 dark:text-gray-300">
-                  No trending data available
-                </div>
-              )}
-            </div>
-          </div>
+          <TrendingCoins 
+            isLoading={isLoading}
+            error={error}
+            trendingCoins={trendingCoins}
+            onCoinSelect={setSelectedCoin}
+          />
         </div>
 
         {/* TEMPORAL ANALYTICS ROW */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
           
-          {/* Volume Analysis Chart */}
-          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-xl">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Volume Analysis</h3>
-            <div className="h-64">
-              {isLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-6 h-6 border-3 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-gray-600 dark:text-gray-300">Loading volume data...</span>
-                  </div>
-                </div>
-              ) : chartData.volumeChart ? (
-                <Bar 
-                  data={chartData.volumeChart} 
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        display: false,
-                      },
-                    },
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                        title: {
-                          display: true,
-                          text: 'Mentions'
-                        }
-                      },
-                      x: {
-                        title: {
-                          display: true,
-                          text: 'Cryptocurrencies'
-                        }
-                      }
-                    },
-                  }}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-600 dark:text-gray-300">
-                  <p>No volume data available</p>
-                </div>
-              )}
-            </div>
-          </div>
+          <VolumeAnalysisChart 
+            isLoading={isLoading}
+            chartData={currentChartData.volumeChart}
+          />
 
-          {/* Trend Ranking Chart */}
-          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-xl">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Trend Rankings</h3>
-            <div className="h-64">
-              {isLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-6 h-6 border-3 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-gray-600 dark:text-gray-300">Loading trend data...</span>
-                  </div>
-                </div>
-              ) : chartData.trendChart ? (
-                <Bar 
-                  data={chartData.trendChart} 
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: 'y',
-                    plugins: {
-                      legend: {
-                        display: false,
-                      },
-                    },
-                    scales: {
-                      x: {
-                        beginAtZero: true,
-                        title: {
-                          display: true,
-                          text: 'Mentions'
-                        }
-                      },
-                      y: {
-                        title: {
-                          display: true,
-                          text: 'Top Cryptocurrencies'
-                        }
-                      }
-                    },
-                  }}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-600 dark:text-gray-300">
-                  <p>No trend data available</p>
-                </div>
-              )}
-            </div>
-          </div>
+          <TrendRankingChart 
+            isLoading={isLoading}
+            chartData={currentChartData.trendChart}
+          />
         </div>
 
         {/* SECOND ROW */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           
-          {/* Enhanced Activity Feed with Temporal Context */}
-          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-xl">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Live Activity Stream</h3>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-xs text-gray-600 dark:text-gray-400">Real-time</span>
-              </div>
-            </div>
-            <div className="space-y-3">
-              {isLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="w-6 h-6 border-3 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="ml-3 text-gray-600 dark:text-gray-300">Loading activity...</span>
-                </div>
-              ) : error ? (
-                <div className="text-center py-8 text-red-600 dark:text-red-400">
-                  {error}
-                </div>
-              ) : Object.entries(metrics).length > 0 ? (
-                Object.entries(metrics)
-                  .sort(([,a], [,b]) => b - a)
-                  .slice(0, 6)
-                  .map(([coin, mentions], index) => {
-                    const timeAgo = Math.floor(Math.random() * 60) + 1;
-                    const trend = Math.random() > 0.5 ? 'up' : 'down';
-                    const percentage = (Math.random() * 20 + 5).toFixed(1);
-                    
-                    return (
-                      <div key={coin} className="flex items-center justify-between p-3 bg-white/40 dark:bg-gray-700/40 rounded-lg hover:bg-white/60 dark:hover:bg-gray-700/60 transition-all duration-200">
-                        <div className="flex items-center">
-                          <div className={`w-3 h-3 rounded-full mr-3 ${
-                            trend === 'up' ? 'bg-green-400' : 'bg-red-400'
-                          }`}></div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">
-                              {coin}
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                              {mentions} mentions • {timeAgo}min ago
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            trend === 'up' 
-                              ? 'text-green-700 bg-green-100' 
-                              : 'text-red-700 bg-red-100'
-                          }`}>
-                            {trend === 'up' ? '↗' : '↘'} {percentage}%
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })
-              ) : (
-                <div className="text-center py-8 text-gray-600 dark:text-gray-300">
-                  No activity data available
-                </div>
-              )}
-            </div>
-          </div>
+          <LiveActivityStream 
+            isLoading={isLoading}
+            error={error}
+            metrics={metrics}
+          />
 
-          {/* Analytics Overview */}
-          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-xl">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Mention Distribution</h3>
-            <div className="h-64">
-              {isLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-6 h-6 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-gray-600 dark:text-gray-300">Loading analytics...</span>
-                  </div>
-                </div>
-              ) : error ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center text-red-600 dark:text-red-400">
-                    <p>Unable to load analytics</p>
-                    <p className="text-sm mt-2">{error}</p>
-                  </div>
-                </div>
-              ) : chartData.distributionChart ? (
-                <Doughnut 
-                  data={chartData.distributionChart} 
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        position: 'bottom',
-                        labels: {
-                          padding: 20,
-                          usePointStyle: true,
-                        },
-                      },
-                      tooltip: {
-                        callbacks: {
-                          label: function(context) {
-                            const label = context.label || '';
-                            const value = context.parsed;
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = ((value / total) * 100).toFixed(1);
-                            return `${label}: ${value} (${percentage}%)`;
-                          }
-                        }
-                      }
-                    },
-                  }}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center text-gray-600 dark:text-gray-300">
-                    <p>No analytics data available</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          <MentionDistribution 
+            isLoading={isLoading}
+            error={error}
+            chartData={currentChartData.distributionChart}
+          />
         </div>
       </div>
 
