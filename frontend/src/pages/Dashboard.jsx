@@ -555,14 +555,20 @@ export default function Dashboard() {
             chartData={currentChartData.volumeChart}
           />
 
-          <TrendRankingChart 
+          {/* <TrendRankingChart 
             isLoading={isLoading}
             chartData={currentChartData.trendChart}
+          /> */}
+          
+          <MentionDistribution 
+            isLoading={isLoading}
+            error={error}
+            chartData={currentChartData.distributionChart}
           />
         </div>
 
         {/* SECOND ROW */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-8"> */}
           
           <LiveActivityStream 
             isLoading={isLoading}
@@ -570,12 +576,8 @@ export default function Dashboard() {
             metrics={metrics}
           />
 
-          <MentionDistribution 
-            isLoading={isLoading}
-            error={error}
-            chartData={currentChartData.distributionChart}
-          />
-        </div>
+          
+        {/* </div> */}
       </div>
 
       {/* Custom Styles for Animations */}
