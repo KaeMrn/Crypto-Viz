@@ -450,10 +450,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 
 
-**Project Repository**: [T-DAT-901-MAR_3](https://github.com/EpitechMscProPromo2026/T-DAT-901-MAR_3)
-
----
-
-<div align="center">
-  <p>Built with ❤️ by the Chainlytics Team</p>
-</div>
